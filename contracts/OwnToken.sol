@@ -10,6 +10,7 @@ contract Token is ERC20Interface {
 
     address public founder;
     mapping(address => uint) balances;
+    mapping(address => mapping(address => bool)) allowed;
 
     constructor() {
         founder = msg.sender;
@@ -17,18 +18,44 @@ contract Token is ERC20Interface {
         balances[founder] = totalSupply;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance){
+    function balanceOf(address _owner) public override view returns (uint256 balance){
         return balances[tokenOwner];
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool success){
+    function transfer(address _to, uint256 _value) public override returns (bool success){
         require(_value <= balances[msg.sender]);
 
         balances[to] += _value;
         balances[msg.sender] -= _value;
 
         emit Transfer(msg.sender, _to, _value);
+        return true;
+    }
 
+    function allowance(address _owner, address _spender) public override view returns (uint256 remaining){
+        return allowed[tokenOwner][spender];
+    }
+    
+    function approve(address _spender, uint256 _value) public override returns (bool success){
+        require(balances[msg.sender] >= _value);
+        require(_value > 0);
+
+        allowed[msg.sender][_spender] = _value;
+
+        emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) public override returns (bool success){
+        require(balances[_from] >= _value);
+        require(allowed[_from][to] >= _value);
+        require(_value > 0);
+
+        balances[_to] += _value;
+        balances[_from] -= _value;
+        allowed[_from][to] -= _value;
+
+        emit Transfer(_from, _to, _value);
         return true;
     }
 }
