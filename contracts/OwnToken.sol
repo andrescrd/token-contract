@@ -76,6 +76,8 @@ contract CryptosICO is OwnToken {
     enum State { BeforeStart, Running, AfterEnd, Halted }
     State public icoState;
 
+    event Invest(address investor, uint investedAmount, uint tokens);
+
     constructor(address payable _deposit) {
         admin = msg.sender;
         deposit = _deposit;
@@ -114,6 +116,25 @@ contract CryptosICO is OwnToken {
         }
     }
 
-    
+    function invest() payable public returns(bool){
+        icoState = getCurrentState();
+        require(icoState == State.Running);
 
+        require(msg.value >= minInvestment && msg.value <= maxInvestment);
+        raiseAmount += msg.value;
+        require(raiseAmount <= hardCap);
+
+        uint tokens = msg.value / tokenPrice;
+        balances[msg.sender] += tokens;
+        balances[founder] -= msg.value;
+        deposit.transfer(msg.value);
+
+        emit Invest(msg.sender, msg.value, tokens);
+
+        return true;
+    }
+
+    receive() payable external{
+        invest();
+    }
 }
