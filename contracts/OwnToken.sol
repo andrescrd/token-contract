@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.9.0;
+
 import "./ERC20Interface.sol";
 
-contract Token is ERC20Interface {
-    string public name = "Token";
-    string public symbol = "TOK";
+contract  OwnToken is ERC20Interface {
+    string public name ="OwnToken";
+    string public symbol = "OTK";
     uint public decimals = 8;
     uint public totalSupply;
 
@@ -12,7 +13,7 @@ contract Token is ERC20Interface {
     mapping(address => uint) balances;
     mapping(address => mapping(address => uint)) allowed;
 
-    constructor() {
+     constructor() {
         founder = msg.sender;
         totalSupply = 1000000;
         balances[founder] = totalSupply;
@@ -58,4 +59,61 @@ contract Token is ERC20Interface {
         emit Transfer(_from, _to, _value);
         return true;
     }
+}
+
+contract CryptosICO is OwnToken {
+    address public admin;
+    address payable public deposit;
+    uint public tokenPrice = 0.001 ether;  // 1 token = 0.001 ether, 1 ether = 1000 token
+    uint public hardCap = 300 ether;
+    uint public raiseAmount;
+    uint public saleStart = block.timestamp;
+    uint public saleEnd = block.timestamp +  604800; // 7 days
+    uint public tokenTradeStart = saleEnd + 604800; // 7 days after sale end
+    uint public maxInvestment = 5 ether;
+    uint public minInvestment = 0.1 ether;
+
+    enum State { BeforeStart, Running, AfterEnd, Halted }
+    State public icoState;
+
+    constructor(address payable _deposit) {
+        admin = msg.sender;
+        deposit = _deposit;
+        icoState = State.BeforeStart;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin);
+        _;
+    }
+
+    function halt() onlyAdmin public {
+        icoState = State.Halted;
+    }
+
+    function resume() onlyAdmin public {
+        icoState = State.Running;
+    }
+
+    function changeDeposit(address payable _deposit) onlyAdmin public {
+        deposit = _deposit;
+    }
+
+    function getCurrentState() public view returns (State) {
+        if(icoState == State.Halted){
+            return State.Halted;
+        }
+        else if(block.timestamp < saleStart){
+            return State.BeforeStart;
+        }       
+        else if(block.timestamp >= saleStart && block.timestamp <= saleEnd){
+            return State.Running;
+        } 
+        else{
+            return State.AfterEnd;
+        }
+    }
+
+    
+
 }
